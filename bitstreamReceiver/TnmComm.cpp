@@ -46,7 +46,7 @@ void CTnmComm::set_save_start(int nType, byte enable, mux_cfg_s *mux_cfg, char *
 		nBuffSize += FILENAME_MAX;
 	}
 	
-	if (send_data(buffer, nBuffSize)) {
+	if (send_data(buffer, nBuffSize, RECORD_PORT)) {
 		_d(_T("[send] set save start.. ip: %s, port: %d, type: %d, sendSize: %d, channel: %02x\n"), m_strIpAddr, m_send_port, nType, nBuffSize, enable);
 	}
 	else {
@@ -62,7 +62,7 @@ void CTnmComm::set_save_stop(int nType)
 	buffer[2] = 0x00;	
 	buffer[3] = 0x02;	
 	
-	if (send_data(buffer, 4)) {
+	if (send_data(buffer, 4, RECORD_PORT)) {
 		_d(_T("[send] set save stop.. ip: %s, port: %d, type: %d\n"), m_strIpAddr, m_send_port, nType);
 	}
 	else {
@@ -81,7 +81,7 @@ void CTnmComm::set_conversion_cfg(int cmd, int codec, int bitrate)
 	memcpy(&buffer[4], &bitrate, 4);
 	buffer[8] = 0xC1;
 
-	if (send_data(buffer, 9)) {
+	if (send_data(buffer, 9, RECORD_PORT)) {
 		_d(_T("[send] set conversion cfg.. cmd: %d, codec: %d, bitrate: %d\n"), cmd, codec, bitrate);
 	}
 	else {
@@ -98,7 +98,7 @@ void CTnmComm::set_analog_cfg(int mode)
 	buffer[2] = mode;	
 	buffer[3] = 0xC1;
 
-	if (send_data(buffer, 4)) {
+	if (send_data(buffer, 4, RECORD_PORT)) {
 		_d(_T("[send] set analog cfg.. mode: %d\n"), mode);
 	}
 	else {
@@ -117,7 +117,7 @@ void CTnmComm::set_distribution_cfg(byte* poutput)
 	}	
 	buffer[10] = 0xC1;
 
-	if (send_data(buffer, 11)) {
+	if (send_data(buffer, 11, RECORD_PORT)) {
 		_d(_T("[send] set distribution cfg.. 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n"), 
 			poutput[0], poutput[1], poutput[2], poutput[3], poutput[4], poutput[5], poutput[6], poutput[7]);
 	}
@@ -127,7 +127,7 @@ void CTnmComm::set_distribution_cfg(byte* poutput)
 	}
 }
 
-bool CTnmComm::send_data(byte* pdata, int size)
+bool CTnmComm::send_data(byte* pdata, int size, int target_port)
 {
 	if (m_sd_send == INVALID_SOCKET) {
 		return false;
@@ -137,7 +137,7 @@ bool CTnmComm::send_data(byte* pdata, int size)
 
 	servAddr.sin_family = AF_INET;
 	servAddr.sin_addr.s_addr = inet_addr(m_strIpAddr);
-	servAddr.sin_port = htons(m_send_port);
+	servAddr.sin_port = htons(m_send_port[target_port]);
 
 	int send = sendto(m_sd_send, (char*)pdata, size, 0, (struct sockaddr*)&servAddr, sizeof(servAddr));
 	if (send != size) {
@@ -147,12 +147,14 @@ bool CTnmComm::send_data(byte* pdata, int size)
 	return true;
 }
 
-void CTnmComm::StartRecv(CString strIP, int send_port, int recv_port)
+void CTnmComm::StartRecv(CString strIP, int send_port[NUM_CONTROL_DEVICE], int recv_port)
 {
 	StopRecv();
 	
 	m_strIpAddr.Format(_T("%s"), strIP);
-	m_send_port = send_port;
+	m_send_port[RECORD_PORT] = send_port[RECORD_PORT];
+	m_send_port[EVENT_PORT] = send_port[EVENT_PORT];
+	m_send_port[PLAY_PORT] = send_port[PLAY_PORT];
 	m_recv_port = recv_port;
 			
 	m_connected = false;
@@ -161,6 +163,7 @@ void CTnmComm::StartRecv(CString strIP, int send_port, int recv_port)
 		Start();	
 	}	
 }
+
 void CTnmComm::StopRecv()
 {
 	Terminate();

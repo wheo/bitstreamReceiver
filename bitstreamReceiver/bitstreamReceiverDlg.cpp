@@ -176,7 +176,7 @@ BOOL CbitstreamReceiverDlg::OnInitDialog()
 
 		m_pChannel[i] = new CDlgChannel(this, i);
 		m_pChannel[i]->set_channel_info(&ch_cfg);
-		m_pChannel[i]->Create(IDD_SUB_CHANNEL_DIALOG, this);	
+		m_pChannel[i]->Create(IDD_SUB_CHANNEL_DIALOG, this);
 		m_pChannel[i]->ShowWindow(SW_SHOW);
 
 		m_pViewer[i] = new CDlgViewer(this, i);
@@ -195,8 +195,9 @@ BOOL CbitstreamReceiverDlg::OnInitDialog()
 	m_cComboFWD.AddString(_T("x5"));
 	m_cComboFWD.SetCurSel(0);
 
-	for (int i = 0; i < 2; i++) {
+	for (int i = 0; i < 2; i++) { // wheo 메인과 백업
 		mp_udp[i] = new CTnmComm();
+		//mp_udp[i]->StartRecv(m_conversion_cfg[i].ctr_channel[0].strIP, m_conversion_cfg[i].ctr_channel[0].nPort, m_conversion_cfg[i].nRecvPort);		
 		mp_udp[i]->StartRecv(m_conversion_cfg[i].ctr_channel.strIP, m_conversion_cfg[i].ctr_channel.nPort, m_conversion_cfg[i].nRecvPort);
 	}
 
@@ -394,10 +395,15 @@ void CbitstreamReceiverDlg::LoadConfigure()
 		m_ncodec = _ttoi(temp);
 
 		for (int j = 0; j < 2; j++) {
+			//ctr_channel 0 : 제어, ctr_channel 1 : 기록
 			ReadConfigLine(fp, temp);
-			_stprintf(m_conversion_cfg[j].ctr_channel.strIP, _T("%s"), temp);
+			_stprintf(m_conversion_cfg[j].ctr_channel.strIP, _T("%s"), temp);			
 			ReadConfigLine(fp, temp);
-			m_conversion_cfg[j].ctr_channel.nPort = _ttoi(temp);
+			m_conversion_cfg[j].ctr_channel.nPort[RECORD_PORT] = _ttoi(temp);
+			ReadConfigLine(fp, temp);
+			m_conversion_cfg[j].ctr_channel.nPort[EVENT_PORT] = _ttoi(temp);
+			ReadConfigLine(fp, temp);
+			m_conversion_cfg[j].ctr_channel.nPort[PLAY_PORT] = _ttoi(temp);
 			ReadConfigLine(fp, temp);
 			m_conversion_cfg[j].nRecvPort = _ttoi(temp);
 			
@@ -439,7 +445,9 @@ void CbitstreamReceiverDlg::LoadConfigure()
 	}
 	else {
 		_stprintf(m_conversion_cfg[0].ctr_channel.strIP, _T("192.168.2.153"));
-		m_conversion_cfg[0].ctr_channel.nPort = 2550;
+		m_conversion_cfg[0].ctr_channel.nPort[RECORD_PORT] = 2550;
+		m_conversion_cfg[0].ctr_channel.nPort[EVENT_PORT] = 2551;
+		m_conversion_cfg[0].ctr_channel.nPort[PLAY_PORT] = 2552;
 
 		CString strIP;
 		int nIP = 91;
@@ -594,7 +602,6 @@ void CbitstreamReceiverDlg::select_file(save_file_meta_s meta)
 	m_cInOut.SetRange(meta.nDuration);
 	m_cInOut.SetPos(0);
 
-
 	memcpy(&m_selected_file_meta, &meta, sizeof(save_file_meta_s));
 }
 
@@ -658,6 +665,7 @@ void CbitstreamReceiverDlg::OnBnClickedButtonSave1()
 {
 	// 상시기록 시작
 	int nIndex = m_cComboDst.GetCurSel();
+	
 	if (mp_udp[nIndex]) {
 		byte enable = 0;
 		for (int i = 0; i < ENABLE_MAX_CHANNEL; i++) {

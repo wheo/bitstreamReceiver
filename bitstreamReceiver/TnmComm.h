@@ -6,7 +6,7 @@ public:
 	CTnmComm();
 	~CTnmComm();
 
-	void StartRecv(CString strIP, int send_port, int recv_port);
+	void StartRecv(CString strIP, int send_port[NUM_CONTROL_DEVICE], int recv_port);
 	void StopRecv();
 	
 	bool is_connected() { return m_connected; };
@@ -42,7 +42,8 @@ private:
 
 	bool CreateSocket();
 
-	bool send_data(byte* pdata, int size);
+	//bool send_data(byte* pdata, int size);
+	bool send_data(byte* pdata, int size, int target_port);
 	
 private:
 	bool m_connected;
@@ -53,7 +54,7 @@ private:
 	SOCKET m_sd_send;
 	SOCKET m_sd_recv;
 	CString m_strIpAddr;
-	int m_send_port;
+	int m_send_port[NUM_CONTROL_DEVICE];
 	int m_recv_port;
 
 	int m_nBitrate;	

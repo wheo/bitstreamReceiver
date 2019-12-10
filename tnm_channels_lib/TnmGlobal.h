@@ -6,6 +6,11 @@
 #define MAX_VIDEO_CHANNEL_COUNT 6
 #define MAX_AUDIO_CHANNEL_COUNT 2
 
+#define RECORD_PORT 0
+#define EVENT_PORT 1
+#define PLAY_PORT 2
+#define NUM_CONTROL_DEVICE 3
+
 typedef struct {
 	int codec;		//> 0- H264, 1- HEVC
 	int profile;
@@ -41,6 +46,10 @@ typedef struct {
 	int nPort;
 }channel_s;
 typedef struct {
+	TCHAR strIP[100];
+	int nPort[NUM_CONTROL_DEVICE];
+}control_s;
+typedef struct {
 	int channel_count;
 	channel_s vid_ch[2];	
 	channel_s aud_ch[2];
@@ -54,7 +63,7 @@ typedef struct {
 }stream_s;
 
 typedef struct {
-	channel_s ctr_channel;
+	control_s ctr_channel;
 	channel_s vid_channel[MAX_VIDEO_CHANNEL_COUNT];
 	channel_s aud_channel[MAX_AUDIO_CHANNEL_COUNT];	
 
